@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f7f8fa">
+<title>豆瓣小组资料管理台</title>
+<style>
+:root{
+  --bg:#f5f6f8;--panel:#fff;--text:#20242b;--muted:#747c88;--line:#e7e9ee;
+  --green:#16845b;--green-bg:#eaf6f0;--amber:#a96712;--amber-bg:#fff5e6;
+  --red:#bd4545;--red-bg:#fff0f0;--blue:#3569b5;--blue-bg:#edf3ff;
+  --shadow:0 8px 28px rgba(30,40,55,.06);--radius:16px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr)}
+.sidebar{background:#fff;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:26px}
+.brand{display:flex;align-items:center;gap:11px;padding:0 8px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:#e9f5ef;color:var(--green);display:grid;place-items:center;font-size:20px;font-weight:800}
+.brand strong{display:block;font-size:15px}.brand small{color:var(--muted);font-size:11px}
+.nav-label{padding:0 10px;color:#9aa1ab;font-size:11px;font-weight:700;letter-spacing:.08em}
+.nav{display:grid;gap:6px}
+.nav button{border:0;background:transparent;color:#5d6571;text-align:left;padding:11px 12px;border-radius:11px;display:flex;align-items:center;gap:11px;font-size:13px}
+.nav button.active{background:#edf6f1;color:var(--green);font-weight:700}
+.nav .ico{width:19px;text-align:center;font-size:16px}
+.side-note{margin-top:auto;background:#f7f8fa;border:1px solid var(--line);border-radius:13px;padding:13px;color:var(--muted);font-size:11px;line-height:1.6}
+.side-note b{color:#47505b}
+.main{min-width:0;padding:30px clamp(16px,3vw,42px) 50px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:26px}
+.eyebrow{color:var(--muted);font-size:12px;margin-bottom:5px}
+h1{font-size:24px;line-height:1.25;margin:0;font-weight:750;letter-spacing:-.03em}
+.top-actions{display:flex;align-items:center;gap:9px}
+.local-pill{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;padding:8px 11px;border-radius:999px;font-size:11px;color:#68717c}
+.dot{width:7px;height:7px;background:#2caa70;border-radius:50%}
+.btn{border:1px solid var(--line);background:#fff;color:#414954;padding:9px 13px;border-radius:10px;font-size:12px;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn:hover{background:#f8fafb}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.primary:hover{background:#116f4b}
+.btn.danger{color:var(--red);border-color:#f0d5d5}
+.btn.small{padding:6px 9px;font-size:11px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;gap:16px}
+.stats{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.stat{padding:17px 18px}
+.stat-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}
+.stat-icon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:#f2f4f7}
+.stat-num{font-size:27px;font-weight:760;letter-spacing:-.04em;margin-top:12px}
+.stat-foot{font-size:11px;color:var(--muted);margin-top:3px}
+.content-grid{grid-template-columns:minmax(0,1.35fr) minmax(280px,.85fr)}
+.panel{padding:20px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}
+.panel-title{font-size:14px;font-weight:750}
+.panel-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field{display:grid;gap:6px;min-width:0}
+.field.full{grid-column:1/-1}
+label{font-size:11px;font-weight:700;color:#555e69}
+input,select,textarea{width:100%;border:1px solid #dfe3e9;border-radius:10px;padding:10px 11px;background:#fff;color:var(--text);font-size:12px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#7db99d;box-shadow:0 0 0 3px rgba(22,132,91,.09)}
+.help{font-size:10px;color:var(--muted);line-height:1.5}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.notice{padding:12px 13px;border-radius:11px;background:#f6f8fa;color:#626c78;font-size:11px;line-height:1.65;border:1px solid var(--line)}
+.notice strong{color:#3c4652}
+.notice.warn{background:#fff8ec;border-color:#f5e5c8;color:#795b2c}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{text-align:left;padding:12px 13px;border-bottom:1px solid #edf0f3;font-size:11px;vertical-align:middle}
+th{background:#fafbfc;color:#78818d;font-weight:700;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td{color:#3e4651}
+.group-name{font-weight:700;color:#29313b}
+.muted{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}
+.pill.confirmed{background:var(--green-bg);color:var(--green)}
+.pill.pending{background:var(--amber-bg);color:var(--amber)}
+.pill.notfound{background:#f0f2f5;color:#68717c}
+.pill.unknown{background:var(--blue-bg);color:var(--blue)}
+.row-actions{display:flex;gap:6px}
+.table-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px;flex-wrap:wrap}
+.toolbar-left,.toolbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search{max-width:230px}
+.empty{padding:35px 18px;text-align:center;color:var(--muted);font-size:12px}
+.empty .empty-icon{font-size:27px;margin-bottom:8px}
+.history-list{display:grid;gap:9px}
+.history-item{border:1px solid var(--line);border-radius:12px;padding:13px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.history-item strong{font-size:12px}.history-item small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(20,26,34,.38);z-index:20;padding:18px;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{width:min(520px,100%);background:#fff;border-radius:18px;padding:21px;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px}
+.modal-head h2{font-size:16px;margin:0}
+.close{border:0;background:#f1f3f5;border-radius:8px;width:30px;height:30px}
+.mobile-nav{display:none}
+.footer-note{margin-top:18px;color:#9aa1ab;font-size:10px;line-height:1.6}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:#222b35;color:#fff;padding:10px 15px;border-radius:10px;font-size:12px;z-index:40;transition:.22s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none!important}
+@media(max-width:950px){.app{grid-template-columns:210px minmax(0,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}}
+@media(max-width:650px){
+ .app{display:block}.sidebar{display:none}.main{padding:20px 14px 86px}
+ .topbar{align-items:flex-start}.top-actions{gap:6px}.local-pill{display:none}
+ h1{font-size:21px}.stats{gap:9px}.stat{padding:13px}.stat-num{font-size:23px}
+ .panel{padding:15px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}
+ .mobile-nav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;z-index:10;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:7px 5px calc(7px + env(safe-area-inset-bottom))}
+ .mobile-nav button{border:0;background:transparent;color:#7a838e;font-size:10px;padding:6px 2px;display:grid;gap:3px;justify-items:center}
+ .mobile-nav button.active{color:var(--green);font-weight:750}.mobile-nav span{font-size:17px}
+ .topbar .btn{padding:8px 9px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">豆</div>
+      <div><strong>小组资料管理台</strong><small>PERSONAL WORKSPACE</small></div>
+    </div>
+    <div>
+      <div class="nav-label">工作空间</div>
+      <nav class="nav">
+        <button class="active" data-page="overview"><span class="ico">▦</span>总览</button>
+        <button data-page="records"><span class="ico">▤</span>小组记录</button>
+        <button data-page="history"><span class="ico">◷</span>本地历史</button>
+        <button data-page="guide"><span class="ico">ⓘ</span>使用说明</button>
+      </nav>
+    </div>
+    <div class="side-note"><b>本地数据模式</b><br>记录保存在当前浏览器中。不会自动上传到 GitHub 或其他服务器。更换设备或清理浏览器数据后，记得先导出备份。</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">工作空间 / <span id="crumb">总览</span></div>
+        <h1 id="pageTitle">小组资料总览</h1>
+      </div>
+      <div class="top-actions">
+        <div class="local-pill"><span class="dot"></span>数据仅保存在本机</div>
+        <button class="btn" id="backupBtn">↓ 备份数据</button>
+      </div>
+    </header>
+
+    <section class="page active" id="page-overview">
+      <div class="grid stats">
+        <div class="card stat"><div class="stat-top">当前账号记录 <span class="stat-icon">◎</span></div><div class="stat-num" id="statUsers">0</div><div class="stat-foot">本地保存的账号档案</div></div>
+        <div class="card stat"><div class="stat-top">小组记录总数 <span class="stat-icon">▤</span></div><div class="stat-num" id="statGroups">0</div><div class="stat-foot">当前档案中的小组记录</div></div>
+        <div class="card stat"><div class="stat-top">已核验记录 <span class="stat-icon">✓</span></div><div class="stat-num" id="statConfirmed">0</div><div class="stat-foot">由使用者确认的记录</div></div>
+        <div class="card stat"><div class="stat-top">待核验记录 <span class="stat-icon">◷</span></div><div class="stat-num" id="statPending">0</div><div class="stat-foot">尚未确认的记录</div></div>
+      </div>
+
+      <div class="grid content-grid">
+        <div class="card panel">
+          <div class="panel-head"><div><div class="panel-title">账号档案</div><div class="panel-sub">为本人或已获明确授权的账号整理资料</div></div><button class="btn small" id="newProfileBtn">＋ 新建档案</button></div>
+          <div class="form-grid">
+            <div class="field"><label for="profileId">豆瓣用户 ID</label><input id="profileId" placeholder="输入用户 ID"></div>
+            <div class="field"><label for="profileNick">用户昵称（选填）</label><input id="profileNick" placeholder="输入昵称"></div>
+            <div class="field full"><label class="checkline"><input type="checkbox" id="authorized" style="width:auto;margin-right:6px">我确认该账号为本人账号，或已获得账号所有者明确授权</label><div class="help">此确认仅作为使用提醒；本工具不会验证授权，也不会绕过豆瓣隐私设置。</div></div>
+          </div>
+          <div class="form-actions"><button class="btn primary" id="saveProfileBtn">保存 / 切换档案</button></div>
+          <div class="notice warn" style="margin-top:15px"><strong>查询边界：</strong>当前版本是本地资料管理工具，不会自动访问豆瓣、搜索第三方用户或绕过成员可见性设置。请只整理本人或明确授权的数据。</div>
+        </div>
+        <div class="card panel">
+          <div class="panel-head"><div><div class="panel-title">最近更新</div><div class="panel-sub">当前浏览器中的本地记录</div></div></div>
+          <div id="recentList" class="history-list"><div class="empty"><div class="empty-icon">◷</div>还没有本地记录</div></div>
+        </div>
+      </div>
+      <div class="footer-note">提示：GitHub Pages 只托管网页文件；每位访问者的记录分别保存在自己的浏览器中，互相不可见，也不会跨设备自动同步。</div>
+    </section>
+
+    <section class="page" id="page-records">
+      <div class="card panel" style="margin-bottom:16px">
+        <div class="panel-head"><div><div class="panel-title">当前账号</div><div class="panel-sub" id="currentProfileLabel">尚未选择账号档案</div></div><button class="btn small" id="switchProfileBtn">切换档案</button></div>
+        <div class="form-grid">
+          <div class="field"><label for="groupName">小组名称</label><input id="groupName" placeholder="例如：小组名称"></div>
+          <div class="field"><label for="groupId">小组 ID / 标识</label><input id="groupId" placeholder="输入小组 ID"></div>
+          <div class="field full"><label for="groupUrl">小组主页链接</label><input id="groupUrl" placeholder="https://www.douban.com/group/..." inputmode="url"></div>
+          <div class="field"><label for="recordStatus">记录状态</label><select id="recordStatus"><option value="pending">待核验</option><option value="confirmed">已人工核验</option><option value="notfound">未检出（仅记录一次查询结果）</option><option value="unknown">无法确认</option></select></div>
+          <div class="field"><label for="recordDate">核验日期</label><input id="recordDate" type="date"></div>
+          <div class="field full"><label for="evidence">证据链接 / 备注（选填）</label><input id="evidence" placeholder="填写可公开访问的依据链接或备注"></div>
+        </div>
+        <div class="form-actions"><button class="btn" id="clearFormBtn">清空</button><button class="btn primary" id="addRecordBtn">＋ 添加记录</button></div>
+      </div>
+
+      <div class="card panel">
+        <div class="table-toolbar">
+          <div><div class="panel-title">小组记录</div><div class="panel-sub">手动维护、筛选和核验记录</div></div>
+          <div class="toolbar-right"><input class="search" id="recordSearch" placeholder="搜索小组名称或 ID"><select id="recordFilter" style="width:auto"><option value="all">全部状态</option><option value="confirmed">已人工核验</option><option value="pending">待核验</option><option value="notfound">未检出</option><option value="unknown">无法确认</option></select></div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>小组名称</th><th>小组 ID</th><th>状态</th><th>核验日期</th><th>证据</th><th>操作</th></tr></thead><tbody id="recordBody"></tbody></table>
+          <div class="empty hidden" id="recordEmpty"><div class="empty-icon">▤</div>暂无记录。可以在上方添加经授权整理的小组资料。</div>
+        </div>
+        <div class="form-actions" style="justify-content:space-between;flex-wrap:wrap"><div class="help">Excel 仅导出「已人工核验」记录；其他状态不会混入。</div><div style="display:flex;gap:8px"><button class="btn" id="exportJsonBtn">导出备份 JSON</button><button class="btn primary" id="exportXlsxBtn">↓ 导出已核验 Excel</button></div></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-history">
+      <div class="card panel">
+        <div class="panel-head"><div><div class="panel-title">本地历史档案</div><div class="panel-sub">仅当前浏览器可见，不会与其他访问者共享</div></div><button class="btn" id="importBtn">↑ 导入备份</button><input type="file" id="importFile" accept=".json,application/json" class="hidden"></div>
+        <div id="profilesList" class="history-list"><div class="empty"><div class="empty-icon">◷</div>还没有保存的档案</div></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-guide">
+      <div class="card panel">
+        <div class="panel-head"><div><div class="panel-title">使用说明</div><div class="panel-sub">本地资料整理版 · GitHub Pages 部署</div></div></div>
+        <div class="notice" style="margin-bottom:14px"><strong>本版本的定位：</strong>用于管理本人或已获明确授权账号的公开资料。它不是豆瓣自动爬虫，不会自动查询成员列表，也不会绕过登录、隐私或访问限制。</div>
+        <h3 style="font-size:13px">1. 创建账号档案</h3><p class="help">在「总览」输入用户 ID 和昵称，并确认账号授权范围，然后保存档案。</p>
+        <h3 style="font-size:13px">2. 添加小组资料</h3><p class="help">进入「小组记录」，录入小组名称、ID、主页链接、状态和可核验的证据链接。状态为「已人工核验」的记录才会进入 Excel。</p>
+        <h3 style="font-size:13px">3. 本地保存</h3><p class="help">数据保存在当前浏览器的 localStorage 中。清理浏览器数据、换浏览器或换设备可能导致记录不可用，请定期导出 JSON 备份。</p>
+        <h3 style="font-size:13px">4. 导出 Excel</h3><p class="help">点击「导出已核验 Excel」，只导出状态为「已人工核验」的记录。首次导出需要联网加载 Excel 文件生成组件。</p>
+        <h3 style="font-size:13px">5. 发布到 GitHub Pages</h3><p class="help">将项目中的 index.html 上传到 GitHub 仓库，在 Settings → Pages 中选择 Deploy from a branch，选择 main 分支和 /(root)，保存后等待生成公开网址。</p>
+        <div class="notice warn" style="margin-top:16px"><strong>隐私提醒：</strong>GitHub Pages 的网页是公开的，但本工具不会把本地数据上传到仓库。不要在公共或他人共用设备上保存敏感资料。</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav">
+  <button class="active" data-page="overview"><span>▦</span>总览</button>
+  <button data-page="records"><span>▤</span>记录</button>
+  <button data-page="history"><span>◷</span>历史</button>
+  <button data-page="guide"><span>ⓘ</span>说明</button>
+</nav>
+
+<div class="modal-backdrop" id="editModal">
+  <div class="modal">
+    <div class="modal-head"><h2>编辑小组记录</h2><button class="close" id="closeModal">×</button></div>
+    <div class="form-grid">
+      <div class="field"><label>小组名称</label><input id="editName"></div>
+      <div class="field"><label>小组 ID / 标识</label><input id="editId"></div>
+      <div class="field full"><label>小组主页链接</label><input id="editUrl"></div>
+      <div class="field"><label>状态</label><select id="editStatus"><option value="pending">待核验</option><option value="confirmed">已人工核验</option><option value="notfound">未检出</option><option value="unknown">无法确认</option></select></div>
+      <div class="field"><label>核验日期</label><input id="editDate" type="date"></div>
+      <div class="field full"><label>证据链接 / 备注</label><input id="editEvidence"></div>
+    </div>
+    <div class="form-actions"><button class="btn" id="cancelEdit">取消</button><button class="btn primary" id="saveEdit">保存修改</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const KEY = "douban_group_manager_v1";
+  const $ = id => document.getElementById(id);
+  const today = () => new Date().toISOString().slice(0,10);
+  let state = loadState();
+  let currentId = state.currentId || "";
+  let editingId = null;
+
+  function loadState(){
+    try { return JSON.parse(localStorage.getItem(KEY)) || {profiles:[],currentId:""}; }
+    catch { return {profiles:[],currentId:""}; }
+  }
+  function persist(){
+    state.currentId = currentId;
+    localStorage.setItem(KEY, JSON.stringify(state));
+    renderAll();
+  }
+  function profile(){ return state.profiles.find(p=>p.id===currentId) || null; }
+  function toast(msg){
+    const t=$("toast"); t.textContent=msg; t.classList.add("show");
+    setTimeout(()=>t.classList.remove("show"),2400);
+  }
+  function safeUrl(value){
+    if(!value) return "";
+    try { const u=new URL(value); return ["http:","https:"].includes(u.protocol)?u.href:""; }
+    catch { return ""; }
+  }
+  function escapeHtml(s){
+    return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  const statusMeta = {
+    confirmed:["已人工核验","confirmed"],
+    pending:["待核验","pending"],
+    notfound:["未检出","notfound"],
+    unknown:["无法确认","unknown"]
+  };
+  function statusPill(s){
+    const m=statusMeta[s]||statusMeta.unknown;
+    return `<span class="pill ${m[1]}">${m[0]}</span>`;
+  }
+  function go(page){
+    document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
+    document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+    const titles={overview:"小组资料总览",records:"小组记录管理",history:"本地历史档案",guide:"使用说明"};
+    $("pageTitle").textContent=titles[page]; $("crumb").textContent=titles[page];
+  }
+  document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.page)));
+
+  function renderAll(){ renderStats(); renderCurrent(); renderRecent(); renderRecords(); renderHistory(); }
+  function renderStats(){
+    const p=profile(), rec=p?.records||[];
+    $("statUsers").textContent=state.profiles.length;
+    $("statGroups").textContent=rec.length;
+    $("statConfirmed").textContent=rec.filter(r=>r.status==="confirmed").length;
+    $("statPending").textContent=rec.filter(r=>r.status==="pending").length;
+  }
+  function renderCurrent(){
+    const p=profile();
+    $("currentProfileLabel").textContent=p?`${p.nickname||"未填写昵称"} · ${p.id}`:"尚未选择账号档案";
+    if(p){ $("profileId").value=p.id; $("profileNick").value=p.nickname||""; }
+  }
+  function renderRecent(){
+    const all=state.profiles.flatMap(p=>(p.records||[]).map(r=>({...r,profileId:p.id,nickname:p.nickname})))
+      .sort((a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||"")).slice(0,5);
+    $("recentList").innerHTML=all.length?all.map(r=>`<div class="history-item"><div><strong>${escapeHtml(r.name)}</strong><small>${escapeHtml(r.nickname||r.profileId)} · ${escapeHtml(r.updatedAt||"")}</small></div>${statusPill(r.status)}</div>`).join(""):`<div class="empty"><div class="empty-icon">◷</div>还没有本地记录</div>`;
+  }
+  function renderRecords(){
+    const p=profile(), body=$("recordBody");
+    if(!p){ body.innerHTML=""; $("recordEmpty").classList.remove("hidden"); return; }
+    const q=$("recordSearch").value.trim().toLowerCase(), f=$("recordFilter").value;
+    const records=(p.records||[]).filter(r=>(f==="all"||r.status===f)&&(!q||`${r.name} ${r.groupId}`.toLowerCase().includes(q)));
+    body.innerHTML=records.map(r=>`<tr>
+      <td><div class="group-name">${escapeHtml(r.name)}</div><div class="help">${r.url?safeUrl(r.url)?`<a href="${escapeHtml(safeUrl(r.url))}" target="_blank" rel="noopener">打开小组主页 ↗</a>`:"":""}</div></td>
+      <td>${escapeHtml(r.groupId||"—")}</td><td>${statusPill(r.status)}</td><td>${escapeHtml(r.date||"—")}</td>
+      <td>${r.evidence&&safeUrl(r.evidence)?`<a href="${escapeHtml(safeUrl(r.evidence))}" target="_blank" rel="noopener">查看证据 ↗</a>`:escapeHtml(r.evidence||"—")}</td>
+      <td><div class="row-actions"><button class="btn small" data-edit="${r.id}">编辑</button><button class="btn small danger" data-delete="${r.id}">删除</button></div></td>
+    </tr>`).join("");
+    $("recordEmpty").classList.toggle("hidden",records.length!==0);
+    body.querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click",()=>openEdit(b.dataset.edit)));
+    body.querySelectorAll("[data-delete]").forEach(b=>b.addEventListener("click",()=>deleteRecord(b.dataset.delete)));
+  }
+  function renderHistory(){
+    $("profilesList").innerHTML=state.profiles.length?state.profiles.map(p=>`<div class="history-item">
+      <div><strong>${escapeHtml(p.nickname||"未命名账号")} · ${escapeHtml(p.id)}</strong><small>${(p.records||[]).length} 条小组记录 · 更新于 ${escapeHtml(p.updatedAt||"")}</small></div>
+      <div class="row-actions"><button class="btn small ${p.id===currentId?"primary":""}" data-open="${escapeHtml(p.id)}">${p.id===currentId?"当前档案":"打开"}</button><button class="btn small danger" data-remove="${escapeHtml(p.id)}">删除</button></div>
+    </div>`).join(""):`<div class="empty"><div class="empty-icon">◷</div>还没有保存的档案</div>`;
+    $("profilesList").querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>{currentId=b.dataset.open;persist();go("records");toast("已切换档案");}));
+    $("profilesList").querySelectorAll("[data-remove]").forEach(b=>b.addEventListener("click",()=>removeProfile(b.dataset.remove)));
+  }
+  function saveProfile(){
+    const id=$("profileId").value.trim(), nickname=$("profileNick").value.trim();
+    if(!id){toast("请先输入豆瓣用户 ID");return;}
+    if(!$("authorized").checked){toast("请先确认账号使用授权范围");return;}
+    let p=state.profiles.find(x=>x.id===id);
+    if(!p){p={id,nickname,records:[],createdAt:today()};state.profiles.push(p);}
+    p.nickname=nickname;p.updatedAt=new Date().toLocaleString();
+    currentId=id;persist();toast("账号档案已保存");
+  }
+  function addRecord(){
+    const p=profile(); if(!p){toast("请先创建或选择账号档案");go("overview");return;}
+    const name=$("groupName").value.trim(), groupId=$("groupId").value.trim(), url=$("groupUrl").value.trim();
+    if(!name){toast("请填写小组名称");return;}
+    if(url&&!safeUrl(url)){toast("小组链接格式不正确");return;}
+    const rec={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),name,groupId,url,status:$("recordStatus").value,date:$("recordDate").value||today(),evidence:$("evidence").value.trim(),updatedAt:new Date().toLocaleString()};
+    p.records.push(rec);p.updatedAt=new Date().toLocaleString();persist();clearForm();toast("小组记录已添加");
+  }
+  function clearForm(){["groupName","groupId","groupUrl","evidence"].forEach(id=>$(id).value="");$("recordStatus").value="pending";$("recordDate").value=today();}
+  function deleteRecord(id){
+    const p=profile();if(!p||!confirm("确定删除这条小组记录吗？"))return;
+    p.records=p.records.filter(r=>r.id!==id);p.updatedAt=new Date().toLocaleString();persist();toast("记录已删除");
+  }
+  function removeProfile(id){
+    if(!confirm("删除该档案及其本地记录？此操作不可撤销，建议先备份。"))return;
+    state.profiles=state.profiles.filter(p=>p.id!==id);if(currentId===id)currentId=state.profiles[0]?.id||"";
+    persist();toast("档案已删除");
+  }
+  function openEdit(id){
+    const r=profile()?.records.find(x=>x.id===id);if(!r)return;editingId=id;
+    $("editName").value=r.name;$("editId").value=r.groupId||"";$("editUrl").value=r.url||"";
+    $("editStatus").value=r.status;$("editDate").value=r.date||today();$("editEvidence").value=r.evidence||"";
+    $("editModal").classList.add("open");
+  }
+  function closeEdit(){$("editModal").classList.remove("open");editingId=null;}
+  function saveEdit(){
+    const p=profile(),r=p?.records.find(x=>x.id===editingId);if(!r)return;
+    const url=$("editUrl").value.trim();if(url&&!safeUrl(url)){toast("链接格式不正确");return;}
+    r.name=$("editName").value.trim();r.groupId=$("editId").value.trim();r.url=url;r.status=$("editStatus").value;
+    r.date=$("editDate").value;r.evidence=$("editEvidence").value.trim();r.updatedAt=new Date().toLocaleString();
+    p.updatedAt=r.updatedAt;persist();closeEdit();toast("修改已保存");
+  }
+  function downloadBlob(blob,name){
+    const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1200);
+  }
+  function exportJSON(){
+    downloadBlob(new Blob([JSON.stringify(state,null,2)],{type:"application/json;charset=utf-8"}),`douban-local-backup-${today()}.json`);
+    toast("JSON 备份已导出");
+  }
+  async function exportXlsx(){
+    const p=profile();if(!p){toast("请先选择账号档案");return;}
+    const rows=(p.records||[]).filter(r=>r.status==="confirmed");
+    if(!rows.length){toast("当前没有已人工核验的记录");return;}
+    if(!window.XLSX){
+      try{
+        await new Promise((resolve,reject)=>{
+          const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+          s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
+        });
+      }catch{toast("Excel 组件加载失败，请检查网络");return;}
+    }
+    const data=[["小组名称","小组ID","小组主页","核验日期","证据链接 / 备注"],
+      ...rows.map(r=>[r.name,r.groupId,r.url,r.date,r.evidence])];
+    const ws=XLSX.utils.aoa_to_sheet(data);ws["!cols"]=[{wch:30},{wch:20},{wch:55},{wch:16},{wch:50}];
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"已人工核验");
+    const info=XLSX.utils.aoa_to_sheet([["项目","内容"],["账号ID",p.id],["昵称",p.nickname||""],["导出记录数",rows.length],["导出时间",new Date().toLocaleString()],["说明","仅包含用户手动标记为已人工核验的记录。"]]);
+    info["!cols"]=[{wch:20},{wch:80}];XLSX.utils.book_append_sheet(wb,info,"导出说明");
+    XLSX.writeFile(wb,`小组资料_${p.id}_${today()}.xlsx`);toast("Excel 已导出");
+  }
+  function backup(){
+    const content=JSON.stringify(state,null,2);
+    downloadBlob(new Blob([content],{type:"application/json;charset=utf-8"}),`douban-backup-${today()}.json`);
+    toast("本地数据备份已下载");
+  }
+  function importJSON(file){
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const incoming=JSON.parse(reader.result);
+        if(!incoming||!Array.isArray(incoming.profiles))throw new Error("格式不正确");
+        if(!confirm("导入备份会将同 ID 档案合并/覆盖为备份内容，是否继续？"))return;
+        const map=new Map(state.profiles.map(p=>[p.id,p]));
+        incoming.profiles.forEach(p=>map.set(p.id,p));
+        state.profiles=[...map.values()];currentId=incoming.currentId||currentId;persist();toast("备份导入成功");
+      }catch(e){toast("导入失败："+e.message);}
+    };reader.readAsText(file);
+  }
+
+  $("saveProfileBtn").addEventListener("click",saveProfile);
+  $("newProfileBtn").addEventListener("click",()=>{$("profileId").value="";$("profileNick").value="";$("authorized").checked=false;go("overview");$("profileId").focus();});
+  $("switchProfileBtn").addEventListener("click",()=>go("history"));
+  $("addRecordBtn").addEventListener("click",addRecord);
+  $("clearFormBtn").addEventListener("click",clearForm);
+  $("recordSearch").addEventListener("input",renderRecords);
+  $("recordFilter").addEventListener("change",renderRecords);
+  $("exportXlsxBtn").addEventListener("click",exportXlsx);
+  $("exportJsonBtn").addEventListener("click",exportJSON);
+  $("backupBtn").addEventListener("click",backup);
+  $("importBtn").addEventListener("click",()=>$("importFile").click());
+  $("importFile").addEventListener("change",e=>{if(e.target.files[0])importJSON(e.target.files[0]);e.target.value="";});
+  $("closeModal").addEventListener("click",closeEdit);$("cancelEdit").addEventListener("click",closeEdit);$("saveEdit").addEventListener("click",saveEdit);
+  $("editModal").addEventListener("click",e=>{if(e.target===$("editModal"))closeEdit();});
+  $("recordDate").value=today();
+  renderAll();
+})();
+</script>
+</body>
+</html>
